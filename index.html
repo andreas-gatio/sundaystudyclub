@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brand Content Machine (Pro)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .loading-spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border-left-color: #6366f1;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        .brand-gradient {
+            background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+        }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen text-slate-900 font-sans pb-20">
+    <!-- Header -->
+    <div class="brand-gradient w-full py-12 px-6 text-center text-white mb-12">
+        <h1 class="text-4xl font-extrabold tracking-tight mb-2">Internal Content Machine</h1>
+        <p class="text-indigo-100 font-medium opacity-90 text-lg italic">"Authorized Brand Asset Generator"</p>
+    </div>
+
+    <div class="max-w-6xl mx-auto p-6">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            
+            <!-- Left: Input Controls -->
+            <div class="lg:col-span-7 space-y-6">
+                <div class="bg-white rounded-3xl shadow-xl border border-slate-200 p-8">
+                    <h2 class="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
+                        <svg class="w-5 h-5 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+                        Create New Asset
+                    </h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <!-- Reference Image -->
+                        <div class="space-y-3">
+                            <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider">1. Upload Reference</label>
+                            <div id="dropZone" class="relative group cursor-pointer border-2 border-dashed border-slate-200 rounded-2xl p-4 hover:border-indigo-400 transition-all bg-slate-50 aspect-square flex items-center justify-center overflow-hidden">
+                                <input type="file" id="imageInput" class="hidden" accept="image/*">
+                                <div id="uploadPlaceholder" class="text-center">
+                                    <div class="w-12 h-12 bg-indigo-50 text-indigo-500 rounded-full flex items-center justify-center mx-auto mb-3">
+                                        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                                    </div>
+                                    <p class="text-sm font-semibold text-slate-600">Drop image here</p>
+                                </div>
+                                <img id="imagePreview" class="hidden absolute inset-0 w-full h-full object-cover rounded-2xl">
+                            </div>
+                        </div>
+
+                        <!-- User Instructions -->
+                        <div class="flex flex-col space-y-3">
+                            <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider">2. Your Instructions</label>
+                            <textarea id="userPrompt" 
+                                class="flex-1 w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none text-sm resize-none"
+                                placeholder="Describe the scene..."></textarea>
+                            
+                            <button id="generateBtn" class="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl transition-all shadow-lg shadow-indigo-200 flex items-center justify-center space-x-2">
+                                <span>Generate On-Brand Asset</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: Dynamic Output & Assistant -->
+            <div class="lg:col-span-5 space-y-6">
+                <!-- Visual Result -->
+                <div id="resultArea" class="bg-slate-900 rounded-3xl shadow-2xl overflow-hidden min-h-[400px] flex flex-col relative group">
+                    <div class="absolute top-4 right-4 z-10">
+                        <button id="downloadBtn" class="hidden bg-white/10 hover:bg-white/20 backdrop-blur-md text-white p-2 rounded-full transition-all">
+                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0L8 8m4 4V4" /></svg>
+                        </button>
+                    </div>
+
+                    <div id="loadingIndicator" class="hidden absolute inset-0 bg-slate-900/80 backdrop-blur-sm z-20 flex flex-col items-center justify-center text-center p-8">
+                        <div class="loading-spinner mb-4 border-t-indigo-400"></div>
+                        <p class="text-sm text-indigo-200 font-medium">Applying brand filters...</p>
+                    </div>
+
+                    <div id="imageResultContainer" class="hidden flex-1 flex items-center justify-center">
+                        <img id="generatedImage" class="w-full h-auto object-contain">
+                    </div>
+
+                    <div id="emptyResult" class="flex-1 flex flex-col items-center justify-center p-12 text-center">
+                        <p class="text-slate-500 font-medium text-sm">Output will appear here</p>
+                    </div>
+                </div>
+
+                <!-- Copy Assistant -->
+                <div class="bg-white rounded-3xl shadow-xl border border-slate-200 overflow-hidden">
+                    <div class="p-5 border-b border-slate-100 bg-indigo-50/30 flex justify-between items-center">
+                        <div class="flex items-center gap-2">
+                            <h2 class="font-bold text-indigo-900 text-sm italic">Copy Assistant</h2>
+                        </div>
+                        <button id="writeCaptionBtn" class="text-[11px] font-bold bg-indigo-600 text-white px-4 py-2 rounded-full shadow-sm hover:bg-indigo-700 transition-all disabled:opacity-30">
+                            DRAFT SOCIAL POST
+                        </button>
+                    </div>
+                    <div class="p-6 space-y-4">
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Topic or Keywords</label>
+                            <textarea id="copyKeywords" rows="2" 
+                                class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none text-xs resize-none"
+                                placeholder="e.g., 'Grief', '5 ways to come closer to Christ', 'Trusting the process'..."></textarea>
+                        </div>
+                        <div class="border-t border-slate-50 pt-4">
+                            <div id="captionText" class="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap"></div>
+                            <div id="captionPlaceholder" class="text-xs text-slate-400 italic text-center py-4">Input keywords and generate an image to unlock copy.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Error Toast -->
+    <div id="errorToast" class="hidden fixed bottom-6 left-1/2 -translate-x-1/2 bg-red-600 text-white px-6 py-3 rounded-full shadow-2xl z-50 text-sm font-semibold"></div>
+
+    <script>
+        /**
+         * HYPER-DETAILED BRAND VISUAL IDENTITY
+         */
+        const BRAND_VISUAL_IDENTITY = `
+            STYLE: Clean, friendly 2D vector-style digital illustration. Flat aesthetic with minimal, soft shading.
+            LINEWORK: Uniform medium-thick black outlines. All shapes are fully enclosed by these distinct outlines. No messy or sketchy lines.
+            
+            CENTRAL CHARACTER DESIGN (SUBJECT: JESUS):
+            - Identity: This character is the central figure, Jesus. Maintain his specific proportions across all scenes.
+            - Hair: Shoulder-length, wavy, rich dark brown hair. Parted exactly in the center. Ends are slightly rounded and bouncy.
+            - Beard: Neatly trimmed brown beard and mustache, connected to the hairline at the ears. Simple, rounded edges.
+            - Face: Warm, medium-tan skin tone. Eyes are simple, expressive black dots or small ovals. Friendly, compassionate, and smiling facial expression.
+            - Clothing: Ankle-length cream or off-white tunic. A thin dark brown belt or sash is tied at the waist. Tunic sleeves are loose. Simple dark brown leather-style sandals.
+            
+            THE 6 APPROVED BRAND STAGES:
+            1. WHITE STAGE: Fully blank, pure white background. Minimalist. Focuses purely on character and subject.
+            2. PASTURE STAGE: Bright blue sky with scattered, fluffy white cartoon clouds. Horizon is low. Vibrant flat green grass field with tiny vertical 'v' marks for grass blades.
+            3. MOUNTAIN SUNSET STAGE: Deep orange and yellow gradient sky. Layered, jagged dark brown and orange mountains in the distance. A central dirt path winding toward the mountains.
+            4. HEAVENLY PRAYER STAGE: Golden-yellow sky composed of soft, glowing clouds. Distinct light rays emanating from the top. Subject is often kneeling in prayer or looking up.
+            5. PASTEL WATER STAGE: Soft pink and light blue pastel sky with horizontal, rounded clouds. Bottom half is a calm water surface with a perfect, clean mirror reflection of the subject.
+            6. CROWDED FIELD STAGE: Green pasture background #2, but filled with a dense crowd of white and light-brown sheep.
+        `;
+
+        /**
+         * BRAND VOICE KNOWLEDGE & TEMPLATES
+         */
+        const BRAND_VOICE_KNOWLEDGE = `
+            CORE TONE & STYLE: 
+            - "Spoken Word" Cadence: Punchy, rhythmic, micro-paragraphs (1-2 lines max). Use frequent line breaks to create pauses.
+            - Authority without Arrogance: Speak as a knowledgeable disciple. Use "We" and "You."
+            - Biblical Foundation: Every major point must include a Scripture Reference (Book Chapter:Verse).
+            - No "Cringe": Focus on actionable, sometimes uncomfortable, biblical truths. No fluff.
+
+            TEMPLATE 1: "The Hard Truth List" (Use if a list, numbers, or 'ways to' are requested)
+            - Headline: [Number] [Topic] — [Punchy Sub-headline/Benefit]
+            - Hook: 2-3 sentence intro challenging the reader.
+            - List: Format as "[Number]. **Bold Imperative Statement**." followed by 1-2 concise sentences and a Scripture citation.
+            - Outro: "Save this list for later when you need it"
+            - CTA: Follow @sundaystudy.club and join Bible Studies every Sunday at 6:30pm CET! ✝️
+            - Hashtags: #jesus #faith
+
+            TEMPLATE 2: "The Spoken Word Reflection" (Default storytelling/encouragement mode)
+            - Hook: Short, startling statement under 10 words.
+            - Flow: Not an essay; a script. Rhythmic micro-paragraphs. 
+            - Narrative: Tell a story or expound on a concept, then bridge to the reader's struggle using "Maybe... that's you."
+            - Contrast: Use parallel statements (Not X, but Y).
+            - Prophetic Closing: Final declaration of faith. 
+            - CTA: Follow @sundaystudy.club and join Bible Studies every Sunday at 6:30pm CET! ✝️
+            - Hashtags: #jesus #faith
+            - Formatting: Use Bold for impact. Single words on their own line (e.g., "Why?"). Minimal emojis.
+        `;
+
+        const apiKey = "";
+        const endpoints = {
+            text: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent',
+            image: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent'
+        };
+
+        const elements = {
+            dropZone: document.getElementById('dropZone'),
+            imageInput: document.getElementById('imageInput'),
+            imagePreview: document.getElementById('imagePreview'),
+            uploadPlaceholder: document.getElementById('uploadPlaceholder'),
+            generateBtn: document.getElementById('generateBtn'),
+            loadingIndicator: document.getElementById('loadingIndicator'),
+            imageResultContainer: document.getElementById('imageResultContainer'),
+            generatedImage: document.getElementById('generatedImage'),
+            emptyResult: document.getElementById('emptyResult'),
+            downloadBtn: document.getElementById('downloadBtn'),
+            writeCaptionBtn: document.getElementById('writeCaptionBtn'),
+            captionText: document.getElementById('captionText'),
+            captionPlaceholder: document.getElementById('captionPlaceholder'),
+            userPrompt: document.getElementById('userPrompt'),
+            copyKeywords: document.getElementById('copyKeywords'),
+            errorToast: document.getElementById('errorToast')
+        };
+
+        let currentBase64 = null;
+        let generatedBase64 = null;
+
+        async function callGemini(endpoint, payload, retries = 5) {
+            for (let i = 0; i < retries; i++) {
+                try {
+                    const res = await fetch(`${endpoint}?key=${apiKey}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    if (!res.ok) throw new Error('API Error');
+                    return await res.json();
+                } catch (e) {
+                    if (i === retries - 1) throw e;
+                    await new Promise(r => setTimeout(r, Math.pow(2, i) * 1000));
+                }
+            }
+        }
+
+        function showToast(msg) {
+            elements.errorToast.textContent = msg;
+            elements.errorToast.classList.remove('hidden');
+            setTimeout(() => elements.errorToast.classList.add('hidden'), 4000);
+        }
+
+        elements.generateBtn.onclick = async () => {
+            if (!currentBase64) return showToast("Upload a reference image!");
+            
+            elements.generateBtn.disabled = true;
+            elements.generateBtn.textContent = "Processing...";
+            elements.emptyResult.classList.add('hidden');
+            elements.loadingIndicator.classList.remove('hidden');
+            elements.imageResultContainer.classList.add('hidden');
+
+            const prompt = `
+                STRICT VISUAL BRAND GUIDELINES: ${BRAND_VISUAL_IDENTITY}
+                USER SCENE INSTRUCTIONS: ${elements.userPrompt.value}
+                REFERENCE IMAGE: Attached.
+                
+                CRITICAL:
+                1. Re-render the reference subject exactly as the BRAND CHARACTER 'JESUS' defined in the guidelines.
+                2. Use one of the 6 APPROVED BRAND STAGES.
+                3. Apply the 'Clean 2D Vector' style with uniform black linework.
+            `;
+
+            try {
+                const result = await callGemini(endpoints.image, {
+                    contents: [{ parts: [
+                        { text: prompt },
+                        { inlineData: { mimeType: "image/png", data: currentBase64 } }
+                    ] }],
+                    generationConfig: { responseModalities: ['IMAGE'] }
+                });
+
+                const b64 = result.candidates?.[0]?.content?.parts?.find(p => p.inlineData)?.inlineData?.data;
+                if (b64) {
+                    generatedBase64 = b64;
+                    elements.generatedImage.src = `data:image/png;base64,${b64}`;
+                    elements.imageResultContainer.classList.remove('hidden');
+                    elements.downloadBtn.classList.remove('hidden');
+                }
+            } catch (e) {
+                showToast("Generation failed.");
+                elements.emptyResult.classList.remove('hidden');
+            } finally {
+                elements.loadingIndicator.classList.add('hidden');
+                elements.generateBtn.disabled = false;
+                elements.generateBtn.textContent = "Generate On-Brand Asset";
+            }
+        };
+
+        elements.writeCaptionBtn.onclick = async () => {
+            if (!generatedBase64) return;
+            
+            const keywords = elements.copyKeywords.value.trim();
+            if (!keywords) return showToast("Enter keywords or a topic first!");
+
+            elements.writeCaptionBtn.disabled = true;
+            elements.captionPlaceholder.classList.add('hidden');
+            elements.captionText.innerHTML = `<span class="animate-pulse italic text-indigo-400">Writing about "${keywords}" in brand voice...</span>`;
+
+            const prompt = `
+                ACT AS: Lead Content Strategist & Copywriter
+                BRAND KNOWLEDGE: ${BRAND_VOICE_KNOWLEDGE}
+                IMAGE CONTEXT: Attached generated image.
+                USER TOPIC/KEYWORDS: ${keywords}
+                
+                DECISION LOGIC:
+                1. Check if the USER TOPIC/KEYWORDS mention a list, "ways to", "habits", or include a number (e.g. "5 things").
+                2. If YES, you MUST use TEMPLATE 1: "The Hard Truth List". Focus the list items on the provided topic.
+                3. If NO (e.g. just "Grief" or a theme), use TEMPLATE 2: "The Spoken Word Reflection".
+                
+                MANDATORY FORMATTING:
+                - Follow the "Spoken Word" flow with frequent line breaks and punchy cadence.
+                - Use Bold for impact as specified in the templates.
+                - Ensure the specific CTA and hashtags are present at the bottom.
+                - Include biblical citations (Book Chapter:Verse).
+            `;
+
+            try {
+                const result = await callGemini(endpoints.text, {
+                    contents: [{ parts: [
+                        { text: prompt },
+                        { inlineData: { mimeType: "image/png", data: generatedBase64 } }
+                    ] }]
+                });
+                const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+                elements.captionText.textContent = text || "Error drafting copy.";
+            } catch (e) {
+                elements.captionText.textContent = "Copy generation failed.";
+            } finally {
+                elements.writeCaptionBtn.disabled = false;
+            }
+        };
+
+        elements.dropZone.onclick = () => elements.imageInput.click();
+        elements.imageInput.onchange = (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    currentBase64 = event.target.result.split(',')[1];
+                    elements.imagePreview.src = event.target.result;
+                    elements.imagePreview.classList.remove('hidden');
+                    elements.uploadPlaceholder.classList.add('hidden');
+                };
+                reader.readAsDataURL(file);
+            }
+        };
+
+        elements.downloadBtn.onclick = () => {
+            const a = document.createElement('a');
+            a.href = elements.generatedImage.src;
+            a.download = `brand_asset.png`;
+            a.click();
+        };
+    </script>
+</body>
+</html>
